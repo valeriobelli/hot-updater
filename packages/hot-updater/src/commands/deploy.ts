@@ -12,7 +12,12 @@ import { createZip } from "@/utils/createZip";
 import { getDefaultTargetAppVersion } from "@/utils/getDefaultTargetAppVersion";
 import { getFileHashFromFile } from "@/utils/getFileHash";
 import { getGitCommitHash, getLatestGitCommitMessage } from "@/utils/git";
-import { type Platform, getCwd, loadConfig } from "@hot-updater/plugin-core";
+import {
+  type Platform,
+  getCwd,
+  loadConfig,
+  sign,
+} from "@hot-updater/plugin-core";
 
 import { getPlatform } from "@/prompts/getPlatform";
 
@@ -24,9 +29,23 @@ import { printBanner } from "@/components/banner";
 export interface DeployOptions {
   targetAppVersion?: string;
   platform?: Platform;
+  privateKey?: string;
+  privateKeyPath?: string;
   forceUpdate: boolean;
   interactive: boolean;
 }
+
+const getPrivateKey = async (options: DeployOptions) => {
+  if (options.privateKey) {
+    return options.privateKey;
+  }
+
+  if (options.privateKeyPath) {
+    return await fs.readFile(options.privateKeyPath, "utf-8");
+  }
+
+  return null;
+};
 
 export const deploy = async (options: DeployOptions) => {
   printBanner();
@@ -129,13 +148,23 @@ export const deploy = async (options: DeployOptions) => {
           });
           bundlePath = path.join(getCwd(), "bundle.zip");
 
+          bundleId = taskRef.buildResult.bundleId;
+          const privateKey = await getPrivateKey(options);
+          const signature = privateKey ? sign(bundleId, privateKey) : null;
+
+          if (signature) {
+            await fs.writeFile(
+              path.join(taskRef.buildResult.buildPath, "SIGNATURE"),
+              signature,
+            );
+          }
+
           await createZip({
             outfile: bundlePath,
             targetDir: taskRef.buildResult.buildPath,
             excludeExts: [".map"],
           });
 
-          bundleId = taskRef.buildResult.bundleId;
           fileHash = await getFileHashFromFile(bundlePath);
 
           return `✅ Build Complete (${buildPlugin.name})`;

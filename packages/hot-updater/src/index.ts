@@ -11,6 +11,7 @@ import { getCwd, log } from "@hot-updater/plugin-core";
 import { Command, Option } from "commander";
 import picocolors from "picocolors";
 import semverValid from "semver/ranges/valid";
+import { genCodeSigningKeys } from "./commands/genCodeSigningKeys";
 
 const program = new Command();
 
@@ -25,6 +26,11 @@ program
   .command("get-plugin-env")
   .description("Get the environment variables for the plugin")
   .action(getPluginEnv);
+
+program
+  .command("gen-code-signing-keys")
+  .description("Generate code signing keys")
+  .action(genCodeSigningKeys);
 
 program
   .command("deploy")
@@ -46,6 +52,16 @@ program
       }
       return value;
     }),
+  )
+  .addOption(
+    new Option("--private-key", "specify the private key as a string").default(
+      null,
+    ),
+  )
+  .addOption(
+    new Option("--private-key-path", "specify the private key path").default(
+      null,
+    ),
   )
   .addOption(
     new Option("-f, --force-update", "force update the app").default(false),
