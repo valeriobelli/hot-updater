@@ -38,10 +38,10 @@ export const decryptJson = <T>(encryptedData: string, secretKey: string) => {
 };
 
 export const generateSigningKeys = () =>
-  generateKeyPair("rsa-pss", {
+  generateKeyPair("rsa", {
     modulusLength: 4096,
     publicKeyEncoding: {
-      type: "spki",
+      type: "pkcs1",
       format: "pem",
     },
     privateKeyEncoding: {
@@ -59,7 +59,7 @@ export function sign(data: string, privateKey: string): string {
   return signer.sign(
     {
       key: privateKey,
-      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+      padding: crypto.constants.RSA_PKCS1_PADDING,
     },
     "base64",
   );

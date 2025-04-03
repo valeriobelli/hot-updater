@@ -202,9 +202,53 @@ RCT_EXPORT_MODULE();
             if (completion) completion(NO);
             return;
         }
+
+        NSString *codeSigninPublicKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"HotUpdaterPublicKey"];
         
         // Search for index.ios.bundle in extracted folder
         NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtPath:extractedDir];
+
+        NSString *foundSignature = nil;
+        for (NSString *file in enumerator) {
+            if ([file isEqualToString:@"SIGNATURE"]) {
+                foundSignature = file;
+                break;
+            }
+        }
+
+        NSString *signaturePath = [extractedDir stringByAppendingPathComponent:foundSignature];
+        NSError *signatureReadError = nil;
+        NSString *signatureContent = [NSString stringWithContentsOfFile:signaturePath
+                                                                encoding:NSUTF8StringEncoding
+                                                                    error:&signatureReadError];
+        if (signatureContent && codeSigninPublicKey) {
+            NSData *signatureData = [[NSData alloc] initWithBase64EncodedString:signatureContent options:0];
+            SecKeyRef publicKey = CreateSecKeyFromPEMString(codeSigninPublicKey); // implement PEM parsing as needed
+            if (!signatureData || !publicKey) {
+                NSLog(@"Invalid signature or public key");
+                return;
+            }
+
+            CFErrorRef verifyError = NULL;
+            BOOL isValid = SecKeyVerifySignature(
+                publicKey,
+                kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256,
+                (__bridge CFDataRef)[NSData dataWithContentsOfFile:[extractedDir stringByAppendingPathComponent:@"index.ios.bundle"]],
+                (__bridge CFDataRef)signatureData,
+                &verifyError
+            );
+
+            if (!isValid) {
+                NSLog(@"Signature verification failed: %@", verifyError);
+                if (completion) completion(NO);
+                return;
+            }
+
+            NSLog(@"Signature is valid");
+
+            return;
+        }
+
         NSString *foundBundle = nil;
         for (NSString *file in enumerator) {
             if ([file isEqualToString:@"index.ios.bundle"]) {

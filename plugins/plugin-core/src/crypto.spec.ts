@@ -9,6 +9,8 @@ describe("signBundleId", () => {
     const bundleId = "0195be69-e010-7438-b4ac-9a8cdb148b61";
     const signedBundleId = sign(bundleId, privateKey);
 
+    console.log({ privateKey, publicKey, bundleId, signedBundleId });
+
     const verify = createVerify("RSA-SHA256");
 
     verify.update(bundleId);
@@ -18,7 +20,7 @@ describe("signBundleId", () => {
       verify.verify(
         {
           key: publicKey,
-          padding: constants.RSA_PKCS1_PSS_PADDING,
+          padding: constants.RSA_PKCS1_PADDING,
         },
         signedBundleId,
         "base64",
