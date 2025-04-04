@@ -205,11 +205,12 @@ export class CloudFrontManager {
               Headers: {
                 Quantity: 5,
                 Items: [
-                  "x-bundle-id",
                   "x-app-version",
                   "x-app-platform",
-                  "x-min-bundle-id",
+                  "x-bundle-id",
                   "x-channel",
+                  "x-forwarded-host",
+                  "x-min-bundle-id",
                 ],
               },
             },
@@ -315,6 +316,7 @@ export class CloudFrontManager {
                   "x-app-version",
                   "x-app-platform",
                   "x-min-bundle-id",
+                  "x-forwarded-host",
                   "x-channel",
                 ],
               },

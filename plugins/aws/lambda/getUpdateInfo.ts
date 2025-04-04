@@ -9,21 +9,30 @@ import {
   filterCompatibleAppVersions,
   getUpdateInfo as getUpdateInfoJS,
 } from "@hot-updater/js";
+import { createIs } from "typia";
 
-const getCdnJson = async <T>({
-  baseUrl,
-  key,
-  keyPairId,
-  privateKey,
-}: {
+const isStringArray = createIs<string[]>();
+const isBundleArray = createIs<Bundle[]>();
+
+interface GetCdnJsonProps<R> {
   baseUrl: string;
-  key: string;
+  decoder: (data: unknown) => data is R;
+  objectKey: string;
   keyPairId: string;
   privateKey: string;
-}): Promise<T | null> => {
+}
+
+const getCdnJson = async <R>({
+  baseUrl,
+  decoder,
+  objectKey,
+  keyPairId,
+  privateKey,
+}: GetCdnJsonProps<R>): Promise<R | null> => {
   try {
     const url = new URL(baseUrl);
-    url.pathname = `/${key}`;
+
+    url.pathname = `/${objectKey}`;
 
     const signedUrl = getSignedUrl({
       url: url.toString(),
@@ -37,37 +46,44 @@ const getCdnJson = async <T>({
         "Content-Type": "application/json",
       },
     });
+
     if (!res.ok) {
       return null;
     }
-    return res.json() as T;
+
+    const result = await res.json();
+
+    if (!decoder(result)) {
+      return null;
+    }
+
+    return result;
   } catch {
     return null;
   }
 };
 
-export const getUpdateInfo = async (
-  {
-    baseUrl,
-    keyPairId,
-    privateKey,
-  }: {
-    baseUrl: string;
-    keyPairId: string;
-    privateKey: string;
-  },
-  {
-    platform,
-    appVersion,
-    bundleId,
-    minBundleId = NIL_UUID,
-    channel = "production",
-  }: GetBundlesArgs,
-): Promise<UpdateInfo | null> => {
+interface GetUpdateInfoProps extends GetBundlesArgs {
+  baseUrl: string;
+  keyPairId: string;
+  privateKey: string;
+}
+
+export const getUpdateInfo = async ({
+  appVersion,
+  baseUrl,
+  bundleId,
+  channel = "production",
+  keyPairId,
+  minBundleId = NIL_UUID,
+  platform,
+  privateKey,
+}: GetUpdateInfoProps): Promise<UpdateInfo | null> => {
   const targetAppVersions = await getCdnJson<string[]>({
     baseUrl,
-    key: `${channel}/${platform}/target-app-versions.json`,
+    decoder: isStringArray,
     keyPairId,
+    objectKey: `${channel}/${platform}/target-app-versions.json`,
     privateKey,
   });
 
@@ -78,19 +94,18 @@ export const getUpdateInfo = async (
 
   const results = await Promise.allSettled(
     matchingVersions.map((targetAppVersion) =>
-      getCdnJson({
+      getCdnJson<Bundle[]>({
         baseUrl,
-        key: `${channel}/${platform}/${targetAppVersion}/update.json`,
+        decoder: isBundleArray,
         keyPairId,
+        objectKey: `${channel}/${platform}/${targetAppVersion}/update.json`,
         privateKey,
       }),
     ),
   );
 
   const bundles = results
-    .filter(
-      (r): r is PromiseFulfilledResult<Bundle[]> => r.status === "fulfilled",
-    )
+    .filter((r) => r.status === "fulfilled")
     .flatMap((r) => r.value ?? []);
 
   return getUpdateInfoJS(bundles, {

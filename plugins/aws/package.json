@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@aws-sdk/cloudfront-signer": "3.772.0",
+    "@clack/prompts": "0.10.0",
     "@hot-updater/core": "0.15.0",
     "@hot-updater/js": "0.15.0",
     "@types/aws-lambda": "^8.10.147",
@@ -50,7 +51,7 @@
     "hono": "^4.6.3",
     "mime": "^4.0.4",
     "picocolors": "^1.0.0",
-    "@clack/prompts": "0.10.0"
+    "ts-patch": "3.3.0"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "3.772.0",
@@ -61,6 +62,7 @@
     "@aws-sdk/credential-providers": "3.772.0",
     "@aws-sdk/lib-storage": "3.772.0",
     "@hot-updater/plugin-core": "0.15.0",
-    "aws-lambda": "1.0.7"
+    "aws-lambda": "1.0.7",
+    "typia": "^8.0.3"
   }
 }

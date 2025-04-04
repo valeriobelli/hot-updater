@@ -69,20 +69,16 @@ const createGetUpdateInfo =
     global.fetch = fetchMock as any;
 
     try {
-      return await getUpdateInfoFromCdn(
-        {
-          baseUrl,
-          keyPairId: "test-key-pair-id",
-          privateKey: "test-private-key",
-        },
-        {
-          minBundleId,
-          channel,
-          appVersion,
-          bundleId,
-          platform,
-        },
-      );
+      return await getUpdateInfoFromCdn({
+        appVersion,
+        baseUrl,
+        bundleId,
+        channel,
+        keyPairId: "test-key-pair-id",
+        minBundleId,
+        platform,
+        privateKey: "test-private-key",
+      });
     } finally {
       global.fetch = originalFetch;
     }
